@@ -148,9 +148,6 @@
 
     function newGame() {
         if (deviceIsPhone()) {
-            alert("New game on phone; app is not optimised for mobile; Width window: " + window.innerWidth + " Height window: " + window.innerHeight + " \
-            Width table: " + tableBody.getBoundingClientRect().width + " Height table: " + tableBody.getBoundingClientRect().height + " number of rows: \
-            " + numberOfRows + " number of columns:" + numberOfColumns);
             speedOfAnimation = slowSpeedOfAnimation;
             document.getElementById("selectVelocity").selectedIndex = 0;
         }
