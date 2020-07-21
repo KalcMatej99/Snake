@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Project - Snake</title>
+    <link rel="stylesheet" href="./public/stylesheets/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400,700">
+    <link rel="stylesheet" href="./public/fonts/ionicons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.6.1/css/pikaday.min.css">
+    <style>
+        td,
+        tbody,
+        table {
+            border: 1px solid #000;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden
+        }
+
+        .square {
+            background-color: black;
+        }
+
+        .fruit {
+            background-color: magenta;
+        }
+
+        .snake {
+            background-color: greenyellow;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark navbar-expand-lg fixed-top bg-white portfolio-navbar gradient">
+        <a class="navbar-brand logo" href="./index.html">Matej Kalc</a>
+
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="nav navbar-nav ml-auto">
+                <li class="nav-item mx-0 mx-lg-1" role="presentation"><button class="btn btn-danger"
+                        onclick="newGame()">New Game</button></li>
+                <li class="nav-item mx-0 mx-lg-1" role="presentation">
+                    <select onchange="selectVelocityChanged()" class="form-control nav-link px-0 px-lg-3 rounded"
+                        id="selectVelocity"
+                        style="margin: auto; width:100%; height:100%; background-color: rgba(0,0,0,0); color: #ffffff;border-color: rgba(0,0,0,0);">
+                        <option value="1" style="color:black">Slow</option>
+                        <option value="2" selected="" style="color:black">Medium</option>
+                        <option value="3" style="color:black">Fast</option>
+                    </select>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <main class="page project-page">
+        <div class="table-responsive">
+            <table class="table">
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+    <script src="./public/javascripts/jquery.min.js"></script>
+    <script src="./public/javascripts/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.6.1/pikaday.min.js"></script>
+    <script src="./public/snake/game.js"></script>
+    <script src="./public/snake/fruit.js"></script>
+    <script src="./public/snake/square.js"></script>
+    <script src="./public/snake/snake.js"></script>
+    <script src="./public/javascripts/constants.js"></script>
+    <script src="./public/javascripts/utility.js"></script>
+</body>
+
+<script>
+    var game;
+    var speedOfAnimation = mediumSpeedOfAnimation;
+
+    document.addEventListener('keydown', function (event) {
+
+        if(game == null) newGame();
+
+        if (event.keyCode == 37 && !game.snake.isCurrentDirectionRight()) {
+            game.snake.changeDirectionToLeft();
+        } else if (event.keyCode == 40 && !game.snake.isCurrentDirectionUp()) {
+            game.snake.changeDirectionToDown();
+        } else if (event.keyCode == 39 && !game.snake.isCurrentDirectionLeft()) {
+            game.snake.changeDirectionToRight();
+        } else if (event.keyCode == 38 && !game.snake.isCurrentDirectionDown()) {
+            game.snake.changeDirectionToUp();
+        }
+    });
+
+    function moveSnakeWithTouch(xPos, yPos) {
+        if(game == null) newGame();
+
+        var xOfTable = tableBody.getBoundingClientRect().x;
+        var yOfTable = tableBody.getBoundingClientRect().y;
+        var widthOfTable = tableBody.getBoundingClientRect().width;
+        var heightOfTable = tableBody.getBoundingClientRect().height;
+        const points = [[xOfTable + widthOfTable / 2, yOfTable + heightOfTable / 4],
+        [xOfTable + (3 * widthOfTable / 4), yOfTable + heightOfTable / 2],
+        [xOfTable + widthOfTable / 2, yOfTable + 3 * heightOfTable / 4],
+        [xOfTable + widthOfTable / 4, yOfTable + heightOfTable / 2]];
+
+        var distances = Array(4);
+        var minElem = 99999999999999;
+        var indexOfMinElem = -1;
+
+        for (var i = 0; i < 4; i++) {
+            distances[i] = distance(xPos, yPos, points[i][0], points[i][1]);
+
+            if(indexOfMinElem == -1 || distances[i] < minElem) {
+                minElem = distances[i];
+                indexOfMinElem = i;
+            }
+        }
+
+        if (!game.snake.isCurrentDirectionUp() && indexOfMinElem == 2) {
+            game.snake.changeDirectionToDown();
+        } else if (!game.snake.isCurrentDirectionRight() && indexOfMinElem == 3) {
+            game.snake.changeDirectionToLeft();
+        } else if (!game.snake.isCurrentDirectionLeft() && indexOfMinElem == 1) {
+            game.snake.changeDirectionToRight();
+        } else if (!game.snake.isCurrentDirectionDown() && indexOfMinElem == 0) {
+            game.snake.changeDirectionToUp();
+        }
+    }
+
+    document.body.addEventListener('touchstart', function (e) {
+
+        var xPos = e.changedTouches[0].pageX;
+        var yPos = e.changedTouches[0].pageY;
+
+        moveSnakeWithTouch(xPos, yPos);
+
+    });
+
+    $(document).ready(function () {
+        alert("Use arrows or touch the screen to move the snake. Collect red fruits to grow.");
+        newGame();
+    });
+
+    function newGame() {
+        if (deviceIsPhone()) {
+            speedOfAnimation = slowSpeedOfAnimation;
+            document.getElementById("selectVelocity").selectedIndex = 0;
+        }
+
+        clearAllTimeouts()
+        game = new Game(numberOfRows, numberOfColumns);
+
+        setInterval(function () { move(); }, speedOfAnimation);
+    }
+
+    function move() {
+        var errno = game.snakeMakeStep();
+        if (errno == -1) {
+            game = null;
+            clearAllTimeouts();
+            alert("Game Over!");
+            alert("Click an arrow on your keyboard or touch the snake playground to play again.");
+        } else {
+            drawCanvas(game);
+        }
+    }
+
+    function drawCanvas(game) {
+        tableBody.innerHTML = '';
+        for (var r = 0; r < game.numberOfRows; r++) {
+            var newRow = '<tr row="' + r + '" id="row-' + r + '" height="' + heightOfBlock + '"></tr>';
+            tableBody.insertAdjacentHTML('beforeend', newRow);
+            var tableRow = document.getElementById("row-" + r);
+            for (var c = 0; c < game.numberOfColumns; c++) {
+                var newNode = '<td row="' + r + '" column="' + c + '" id="square-' + r + '-' + c + '" \
+                height="' + heightOfBlock + '" width="' + widthOfBlock + '"></td>';
+                tableRow.insertAdjacentHTML('beforeend', newNode);
+
+                document.getElementById(getIdFor(r, c)).classList.remove("square");
+                document.getElementById(getIdFor(r, c)).classList.remove("snake");
+                document.getElementById(getIdFor(r, c)).classList.remove("fruit");
+                if (game.isEmptySquare(r, c)) {
+                    document.getElementById(getIdFor(r, c)).classList.add("square");
+                } else if (game.isSnakeSquare(r, c)) {
+                    document.getElementById(getIdFor(r, c)).classList.add("snake");
+                } else if (game.isFruitSquare(r, c)) {
+                    document.getElementById(getIdFor(r, c)).classList.add("fruit");
+                }
+            }
+        }
+    }
+
+    function selectVelocityChanged() {
+        var selectedVelocity = document.getElementById("selectVelocity").selectedIndex;
+        switch(selectedVelocity){
+            case 0: speedOfAnimation = slowSpeedOfAnimation; break;
+            case 1: speedOfAnimation = mediumSpeedOfAnimation; break;
+            case 2: speedOfAnimation = fastSpeedOfAnimation; break;
+            default: break;
+        }
+    }
+</script>
+
+</html>
