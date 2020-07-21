@@ -2,6 +2,7 @@ class Snake {
     constructor(r, c) {
         this.body = [new Square(r, c), new Square(r, c - 1), new Square(r, c - 2)];
         this.direction = 1;
+        this.directionChanged = false;
     }
 
     head() {
@@ -30,16 +31,28 @@ class Snake {
     }
 
     changeDirectionToUp() {
-        this.direction = 0;
+        if (this.canChangeDirection()) {
+            this.directionChanged = true;
+            this.direction = 0;
+        }
     }
     changeDirectionToRight() {
-        this.direction = 1;
+        if (this.canChangeDirection()) {
+            this.directionChanged = true;
+            this.direction = 1;
+        }
     }
     changeDirectionToDown() {
-        this.direction = 2;
+        if (this.canChangeDirection()) {
+            this.directionChanged = true;
+            this.direction = 2;
+        }
     }
     changeDirectionToLeft() {
-        this.direction = 3;
+        if (this.canChangeDirection()) {
+            this.directionChanged = true;
+            this.direction = 3;
+        }
     }
     isCurrentDirectionUp() {
         return this.direction == 0;
@@ -59,5 +72,10 @@ class Snake {
     }
     moveTail() {
         this.body.pop();
+        this.directionChanged = false;
+    }
+
+    canChangeDirection() {
+        return !this.directionChanged
     }
 }
